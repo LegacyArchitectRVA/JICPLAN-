@@ -15,7 +15,6 @@ index.html                  The whole site, one page
 assets/
   craig-headshot.jpg/.webp  Founder photo
   logo-lockup.png           Site logo
-  share-card.jpg            Social preview image (og:image / twitter:image)
   favicon-16.png            Favicon set
   favicon-32.png
   favicon-48.png
@@ -24,14 +23,6 @@ assets/
   hero/
     jic-hero.mp4             Hero background video
     jic-hero-poster.jpg      Poster frame shown before the video loads
-  pillars/
-    pillar-digital.jpg/.webp     Seven pillar images, used in the tap-to-expand pillar grid
-    pillar-emergency.jpg/.webp
-    pillar-financial.jpg/.webp
-    pillar-household.jpg/.webp
-    pillar-vital.jpg/.webp
-    pillar-legacy.jpg/.webp
-    pillar-business.jpg/.webp
   samples/
     jic-cover.jpg/.webp             Sample workbook pages shown in "Real pages from the workbook"
     jic-contents.jpg/.webp
@@ -52,9 +43,13 @@ Two spots in `index.html` reference sample filenames:
 - The hero section near the top, which always shows `jic-cover.jpg`/`.webp`
 - The `<section id="samples">` block further down, which lists every sample page shown in the strip
 
-## Updating the pillar images
+## The seven pillars section
 
-The seven pillar images are built by a small script in `index.html` (search for `PILLARS =`). Each pillar's `img` value is a path with no extension, and the script appends `.jpg` and `.webp` itself. Keep both files present at that path for any pillar you touch.
+The pillar grid (search `PILLARS =` in `index.html`) is text-only, an expandable button per pillar with a name and item list. It doesn't load any images, so there's nothing to keep in sync here beyond editing the array itself.
+
+## The share card
+
+The og:image and twitter:image tags point at `https://legacyarchitectrva.com/assets/share-card.jpg`, which lives in the main site's repo, not this one. That's intentional, one shared image instead of keeping duplicates in sync across two repos.
 
 ## Deployment
 
