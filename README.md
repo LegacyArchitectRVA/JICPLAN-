@@ -30,7 +30,7 @@ assets/
     jic-readiness-snapshot.jpg/.webp
     jic-digital-life.jpg/.webp
     jic-financial-assets.jpg/.webp
-    jic-health-medical.jpg/.webp
+    jic-vital-records.jpg/.webp
     jic-next-step.jpg/.webp
 ```
 
