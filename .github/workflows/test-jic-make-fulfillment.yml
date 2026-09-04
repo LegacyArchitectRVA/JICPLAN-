@@ -1,0 +1,46 @@
+name: Test JIC Make fulfillment
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/test-jic-make-fulfillment.yml
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send synthetic checkout.session.completed event to Make
+        env:
+          MAKE_WEBHOOK_URL: https://hook.us2.make.com/ivtiwatss7gcpp7k2ner63kk0h7fhvq2
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            -X POST "$MAKE_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            --data-binary @- <<'JSON'
+          {
+            "id": "evt_jic_make_verification_20260904",
+            "object": "event",
+            "type": "checkout.session.completed",
+            "data": {
+              "object": {
+                "id": "cs_jic_make_verification_20260904",
+                "object": "checkout.session",
+                "customer_details": {
+                  "email": "craig@legacyarchitectrva.com",
+                  "name": "Craig Rothchild",
+                  "phone": "+18048661320",
+                  "address": {
+                    "city": "Richmond",
+                    "postal_code": "23220",
+                    "state": "VA"
+                  }
+                }
+              }
+            }
+          }
+          JSON
