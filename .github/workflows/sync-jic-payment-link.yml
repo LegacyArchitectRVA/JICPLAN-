@@ -15,21 +15,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Replace legacy JIC checkout link
+      - name: Sync active JIC checkout link
+        env:
+          JIC_CHECKOUT_URL: https://buy.stripe.com/aFafZhavZcCIe7qbI96Zy01
         run: |
-          OLD='https://buy.stripe.com/9B6fZjeyGgWO3zj0ct5Rm0o'
-          NEW='https://buy.stripe.com/aFafZhavZcCIe7qbI96Zy01'
-          found=0
-          while IFS= read -r -d '' file; do
-            if grep -Fq "$OLD" "$file"; then
-              sed -i "s|$OLD|$NEW|g" "$file"
-              echo "Updated $file"
-              found=1
-            fi
-          done < <(find . -type f -name '*.html' -print0 -not -path './.git/*')
-          if [ "$found" -eq 0 ]; then
-            echo 'No legacy JIC checkout URL found; nothing to change.'
-          fi
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          url = os.environ["JIC_CHECKOUT_URL"]
+          root = Path(".")
+          changed = []
+          pattern = re.compile(r"https://buy\\.stripe\\.com/[^\"'<>\\s]+")
+
+          for path in root.rglob("*.html"):
+              if ".git" in path.parts:
+                  continue
+              text = path.read_text(encoding="utf-8")
+              original = text
+
+              def repl(match):
+                  start = max(0, match.start() - 1500)
+                  end = min(len(text), match.end() + 1500)
+                  context = text[start:end].lower()
+                  if any(term in context for term in ("just-in-case", "just in case", "jic plan", "jicplan", "$29")):
+                      return url
+                  return match.group(0)
+
+              text = pattern.sub(repl, text)
+              if text != original:
+                  path.write_text(text, encoding="utf-8")
+                  changed.append(str(path))
+
+          print("Changed:", changed)
+          PY
 
       - name: Commit changes
         run: |
