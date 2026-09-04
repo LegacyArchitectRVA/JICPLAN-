@@ -1,0 +1,73 @@
+name: Sync JIC Plan payment link
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync active JIC checkout link
+        env:
+          JIC_CHECKOUT_URL: https://buy.stripe.com/aFafZhavZcCIe7qbI96Zy01
+        run: |
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          url = os.environ['JIC_CHECKOUT_URL']
+          root = Path('.')
+          changed = []
+
+          for path in root.rglob('*.html'):
+              if '.git' in path.parts:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+
+              # Replace Stripe checkout URLs that are clearly associated with the JIC product.
+              pattern = re.compile(r'https://buy\\.stripe\\.com/[^"\\'<>\\s]+')
+              def repl(m):
+                  start = max(0, m.start() - 1500)
+                  end = min(len(text), m.end() + 1500)
+                  context = text[start:end].lower()
+                  if any(term in context for term in ('just-in-case', 'just in case', 'jic plan', 'jicplan', '$29')):
+                      return url
+                  return m.group(0)
+              text = pattern.sub(repl, text)
+
+              # If this is the standalone JIC page and no active checkout URL exists, add one.
+              if path.as_posix() == 'index.html' and url not in text:
+                  marker = '</main>'
+                  block = f'''\n<section aria-label="Purchase the Just-In-Case Plan" style="padding:56px 0;text-align:center;border-top:1px solid rgba(212,182,97,.16);">\n  <div class="wrap">\n    <p style="font-family:Inter,sans-serif;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#d4b661;margin-bottom:14px;">Ready to start?</p>\n    <h2 style="margin-bottom:12px;">Get the Just-In-Case Plan</h2>\n    <p style="max-width:560px;margin:0 auto 24px;">The complete 26-page fillable workbook, delivered digitally after purchase.</p>\n    <a class="btn btn-gold" href="{url}" rel="noopener">Get the Plan for $29</a>\n  </div>\n</section>\n'''
+                  if marker in text:
+                      text = text.replace(marker, block + marker, 1)
+                  else:
+                      text = text.replace('</body>', block + '</body>', 1)
+
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          print('Changed:', changed)
+          PY
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No JIC checkout changes needed."
+          else
+            git commit -m "fix: wire JIC Plan checkout to active Stripe link"
+            git push
+          fi
